@@ -24,7 +24,7 @@ export const createUserController = async (req, res) => {
             });
         }
 
-        if (role) {
+        if (1) {
             await assignRoleToUser(result.id, role);
         }
 

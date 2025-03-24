@@ -1,40 +1,39 @@
-import express from 'express';
+const express = require('express');
 const routerAPI = express.Router();
 
-
-import {
+const {
     register, Login, createUserController,
     getAllUsersController, deleteUserController,
     updateUserController
-} from "../Controller/userController.js";
+} = require("../Controller/userController");
 
-import { uploadFileController } from "../Controller/fileController.js";
-import {
+const { uploadFileController } = require("../Controller/fileController");
+const {
     createCategoryController, getAllCategoriesController,
     deleteCategoryController, updateCategoryController, 
-} from "../Controller/categoryController.js";
+} = require("../Controller/categoryController");
 
-import {
+const {
     createProductController, getAllProductsController,
     getProductByIdController, deleteProductController, updateProductController,
     getProductsByCategoryController, searchProductsController
-} from "../Controller/productController.js";
+} = require("../Controller/productController");
 
-import {
+const {
     createRoleController, getAllRolesController,
     deleteRoleController, updateRoleController
-} from "../Controller/roleController.js";
+} = require("../Controller/roleController");
 
-import { verifyToken, checkRole } from "../Middleware/authMiddleware.js"; // Thay đổi import
-import { verifyTokenController } from "../Controller/authController.js"; // Thay đổi import
-import {
+const { verifyToken, checkRole } = require("../Middleware/authMiddleware");
+const { verifyTokenController } = require("../Controller/authController");
+const {
     addToCartController, getCartController,
     getCartItemsController, removeFromCartController,
     updateCartController
-} from "../Controller/cartController.js";
+} = require("../Controller/cartController");
 
-import { checkoutOrderController, getOrderDetailsController } from '../Controller/orderController.js';
-import { generateVietQRController } from '../Controller/paymmentController.js';
+const { checkoutOrderController, getOrderDetailsController, updateOrderStatusController, getAllOrdersController } = require('../Controller/orderController');
+const { generateVietQRController } = require('../Controller/paymmentController');
 
 routerAPI.post('/login', Login);
 routerAPI.post('/register', register);
@@ -51,7 +50,7 @@ routerAPI.post('/product', verifyToken, checkRole(['Admin']), createProductContr
 routerAPI.get('/product-all', getAllProductsController);
 routerAPI.get('/product/:id', getProductByIdController);
 routerAPI.get('/product/category/:categoryId', getProductsByCategoryController);
-routerAPI.get('/products/search', searchProductsController); // Thêm route cho tìm kiếm sản phẩm
+routerAPI.get('/products/search', searchProductsController);
 routerAPI.delete('/delete-product/:id', verifyToken, checkRole(['Admin']), deleteProductController);
 routerAPI.put('/update-product', verifyToken, checkRole(['Admin', 'staff']), updateProductController);
 
@@ -71,13 +70,15 @@ routerAPI.put('/update-role', verifyToken, checkRole(['Admin']), updateRoleContr
 //Api cho cart
 routerAPI.post('/cart/add', verifyToken, addToCartController);
 routerAPI.get('/cart', verifyToken, getCartController);
-routerAPI.get('/cart/items', verifyToken, getCartItemsController); // Add this new route
+routerAPI.get('/cart/items', verifyToken, getCartItemsController);
 routerAPI.delete('/cart/delete/:cartItemId', verifyToken, removeFromCartController);
 routerAPI.put('/cart/update/:cartItemId', verifyToken, updateCartController);
 
 // Api cho order
 routerAPI.post('/order/checkout', verifyToken, checkoutOrderController);
+routerAPI.get('/orders', verifyToken, getAllOrdersController);
 routerAPI.get('/order/:orderId', verifyToken, getOrderDetailsController);
+routerAPI.put('/order/:orderId/status', verifyToken, updateOrderStatusController);
 
 // API cho thanh toán bằng QR Code
 routerAPI.post('/payment/vietqr', verifyToken, generateVietQRController);

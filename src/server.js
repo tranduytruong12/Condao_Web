@@ -1,17 +1,21 @@
 require('dotenv').config();
-import express from 'express';
-import cors from 'cors';
-import path from 'path';
-import apiRoutes from './Routes/api.js';
-import fileUpload from 'express-fileupload';
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+const apiRoutes = require('./Routes/api');
+const fileUpload = require('express-fileupload');
 
 const app = express();
 const port = process.env.PORT || 8888;
 const hostname = process.env.HOST_NAME;
 
-
 //config file upload
-app.use(fileUpload());
+app.use(fileUpload({
+    useTempFiles: true,
+    tempFileDir: '/tmp/',
+    limits: { fileSize: 50 * 1024 * 1024 }, // 50MB max file size
+    createParentPath: true
+}));
 app.use("/image", express.static(path.join(__dirname, "Public/image")));
 
 //config req.body

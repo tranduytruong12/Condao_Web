@@ -3,21 +3,37 @@ import path from 'path';
 import fs from 'fs'
 
 export const uploadSingleFile = async (fileObject) => {
-    // save => public/images/upload
-    //remember to create the upload folder first
-    let uploadPath = path.resolve(__dirname, "../Public/image/products");
-    console.log("Upload path:", uploadPath);
-
-
-    let extName = path.extname(fileObject.name);
-    let baseName = path.basename(fileObject.name, extName);
-
-    //create final path: eg: /upload/your-image.png
-    let finalName = `${baseName}-${Date.now()}${extName}`
-    let finalPath = `${uploadPath}/${finalName}`;
-
-
     try {
+        // Validate file
+        if (!fileObject) {
+            throw new Error('No file provided');
+        }
+
+        // Validate file type
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!allowedTypes.includes(fileObject.mimetype)) {
+            throw new Error('Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.');
+        }
+
+        // Validate file size (50MB limit)
+        const maxSize = 50 * 1024 * 1024; // 50MB in bytes
+        if (fileObject.size > maxSize) {
+            throw new Error('File size exceeds 50MB limit');
+        }
+
+        // Create upload directory if it doesn't exist
+        let uploadPath = path.resolve(__dirname, "../Public/image/products");
+        if (!fs.existsSync(uploadPath)) {
+            fs.mkdirSync(uploadPath, { recursive: true });
+        }
+
+        // Generate unique filename
+        let extName = path.extname(fileObject.name);
+        let baseName = path.basename(fileObject.name, extName);
+        let finalName = `${baseName}-${Date.now()}${extName}`;
+        let finalPath = `${uploadPath}/${finalName}`;
+
+        // Move file to upload directory
         await fileObject.mv(finalPath);
 
         return {
@@ -25,16 +41,16 @@ export const uploadSingleFile = async (fileObject) => {
             name: finalName,
             path: finalPath,
             err: null
-        }
+        };
     } catch (error) {
-        console.log(">>> check err: ", error);
+        console.error("File upload error:", error);
         return {
             status: 'failed',
             path: null,
-            err: JSON.stringify(err)
-        }
+            err: error.message
+        };
     }
-}
+};
 
 export const uploadMultipleFiles = async (filesArr) => {
     try {
