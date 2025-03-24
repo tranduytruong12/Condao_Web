@@ -1,9 +1,10 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, Badge, Dropdown, Input } from 'antd'; // Import Input from antd
+import { Menu, Badge, Dropdown, Input, Button } from 'antd'; // Import Input and Button from antd
 import { UsergroupAddOutlined, HomeOutlined, AuditOutlined, LoginOutlined, AliwangwangOutlined, ShoppingCartOutlined, SearchOutlined } from '@ant-design/icons'; // Import SearchOutlined
 import { useContext, useState, useEffect } from 'react';
 import { AuthContext } from '../../context/auth.context';
 import { fetchAllCartAPI } from '../../../services/api.service';
+import '../../../styles/Header.css';
 
 const Header = ({ current, setCurrent }) => {
     const { user, setUser } = useContext(AuthContext);
@@ -72,45 +73,31 @@ const Header = ({ current, setCurrent }) => {
     const isAdmin = user?.roles?.includes('Admin');
 
     const cartMenu = (
-        <Menu>
+        <div style={{ padding: '12px', width: '300px' }}>
             {cartItems.length > 0 ? (
                 <>
-                    {cartItems.map((item, index) => (
-                        <Menu.Item key={`cart-item-${index}`}>
-                            <div style={{
-                                width: '300px',
-                                display: 'flex',
-                                padding: '10px',
-                                borderBottom: '1px solid #eee',
-                                cursor: 'pointer'
-                            }}>
-                                <img
-                                    src={item.image}
-                                    style={{
-                                        width: '50px',
-                                        height: '50px',
-                                        objectFit: 'cover',
-                                        marginRight: '10px'
-                                    }}
-                                    alt={item.title}
-                                />
-                                <div style={{ flex: 1 }}>
-                                    <div style={{ fontWeight: 'bold' }}>{item.title}</div>
-                                    <div style={{ color: '#888' }}>Số lượng: {item.quantity}</div>
-                                    <div style={{ color: '#f60' }}>giá: {item.price.toLocaleString('vi-VN')}đ</div>
+                    {cartItems.map(item => (
+                        <div key={item.id} style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                            <img src={item.image} alt={item.title} style={{ width: '40px', height: '40px', objectFit: 'cover', marginRight: '8px' }} />
+                            <div style={{ flex: 1 }}>
+                                <div style={{ fontWeight: 'bold' }}>{item.title}</div>
+                                <div style={{ color: '#666' }}>
+                                    {item.price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
                                 </div>
                             </div>
-                        </Menu.Item>
+                            <div style={{ marginLeft: '8px' }}>x{item.quantity}</div>
+                        </div>
                     ))}
-                    <Menu.Divider />
-                    <Menu.Item key="view-cart">
-                        <Link to="/cart">Xem giỏ hàng</Link>
-                    </Menu.Item>
+                    <div style={{ textAlign: 'right', marginTop: '8px', borderTop: '1px solid #eee', paddingTop: '8px' }}>
+                        <Link to="/cart">
+                            <Button type="primary">View Cart</Button>
+                        </Link>
+                    </div>
                 </>
             ) : (
-                <Menu.Item key="empty-cart">Giỏ hàng trống</Menu.Item>
+                <div style={{ textAlign: 'center' }}>Your cart is empty</div>
             )}
-        </Menu>
+        </div>
     );
 
     const items = [
@@ -126,10 +113,10 @@ const Header = ({ current, setCurrent }) => {
                 icon: <UsergroupAddOutlined />
             },
             {
-                label: <Link to={"/products"}>Products</Link>, // Sửa từ /product thành /products
-                key: 'products', // Sửa key từ 'product' thành 'products'
+                label: <Link to={"/admin/products"}>Products</Link>,
+                key: 'products',
                 icon: <AuditOutlined />,
-            }
+            },
         ] : []),
         {
             label: (
@@ -164,35 +151,28 @@ const Header = ({ current, setCurrent }) => {
     ];
 
     return (
-        <>
-            <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0', background: '#fff', position: 'fixed', top: 0, width: '100%', zIndex: 1000, marginBottom: 0 }}>
-                <Input.Search
-                    placeholder="Tìm kiếm sản phẩm..."
-                    enterButton={<SearchOutlined />}
-                    size="large"
-                    onSearch={handleSearch}
-                    style={{ maxWidth: '600px', width: '100%' }}
-                />
+        <div className="header">
+            <div className="logo">
+                <Link to="/">
+                    <img src="/src/assets/images/slides/Logodemo.png" alt="Logo" />
+                </Link>
             </div>
             <Menu
-                onClick={onClick}
-                selectedKeys={[current]}
                 mode="horizontal"
+                selectedKeys={[current]}
+                onClick={onClick}
                 items={items}
-                style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    position: "fixed",
-                    top: '50px', // Adjust this value based on the height of the search bar
-                    width: "100%",
-                    zIndex: 1000,
-                    marginTop: 0
-                }}
+                className="menu"
             />
-            <div style={{ paddingTop: '114px' }}> {/* Adjust this value based on the combined height of the search bar and menu */}
+            <div className="search">
+                <Input.Search
+                    placeholder="Search products..."
+                    onSearch={handleSearch}
+                    style={{ width: 300 }}
+                />
             </div>
-        </>
-    )
-}
+        </div>
+    );
+};
 
 export default Header;

@@ -2,30 +2,32 @@ import UserForm from "../../components/user/user.form";
 import UserTable from "../../components/user/user.table";
 import { useEffect, useState } from 'react';
 import { fetchAllUserAPI } from '../../services/api.service';
+import '../../styles/UserManagement.css';
 
 const UserPage = () => {
-
     const [dataUsers, setDataUsers] = useState([]);
-    // console.log(">>> dataUsers", dataUsers)
-    //empty array => run once
+
     useEffect(() => {
-        // console.log(">>> run useEffect 111")
         loadUser();
     }, []);
 
     const loadUser = async () => {
         const res = await fetchAllUserAPI();
-        // Xử lý dữ liệu vai trò
         const usersWithRoles = res.data.user.map(user => ({
             ...user,
             role: user.Roles.map(role => role.name).join(', ')
         }));
         setDataUsers(usersWithRoles);
-        console.log(">>> usersWithRoles", usersWithRoles);
     }
+
     return (
-        <div style={{ padding: "20px" }}>
-            <UserForm loadUser={loadUser} />
+        <div className="user-management">
+            <div className="page-header">
+                <h1>User Management</h1>
+            </div>
+            <div className="user-form">
+                <UserForm loadUser={loadUser} />
+            </div>
             <UserTable
                 loadUser={loadUser}
                 dataUsers={dataUsers} />

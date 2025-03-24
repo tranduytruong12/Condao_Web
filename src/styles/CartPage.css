@@ -2,6 +2,9 @@
     padding: 20px;
     max-width: 1200px;
     margin: 0 auto;
+    margin-top: 64px; /* Account for fixed header */
+    margin-bottom: 100px; /* Account for fixed footer */
+    min-height: calc(100vh - 64px - 80px); /* Viewport height minus header and footer */
 }
 
 .cart-page h1 {
@@ -26,6 +29,13 @@
 .cart-total {
     margin-top: 24px;
     text-align: right;
+    background: white;
+    padding: 24px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    bottom: 80px; /* Position above footer */
+    z-index: 100;
 }
 
 .cart-total h2 {
@@ -47,4 +57,15 @@
 .empty-cart p {
     font-size: 18px;
     margin-bottom: 24px;
+}
+
+@media (max-width: 768px) {
+    .cart-page {
+        padding: 16px;
+        margin-bottom: 120px; /* Increased margin for mobile footer */
+    }
+
+    .cart-total {
+        bottom: 100px; /* Adjusted for mobile footer */
+    }
 }

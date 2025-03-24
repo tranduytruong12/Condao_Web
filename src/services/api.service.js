@@ -43,7 +43,6 @@ const deleteUserAPI = (id) => {
 const fetchAllUserAPI = () => {
     const URL_BACKEND = "/v2/api/user-all";
     return axios.get(URL_BACKEND);
-
 }
 
 const handleUploadFile = (file, folder) => {
@@ -59,7 +58,6 @@ const handleUploadFile = (file, folder) => {
     bodyFormData.append("image", file)
     return axios.post(URL_BACKEND, bodyFormData, config);
 }
-
 
 const fetchAllRoleAPI = () => {
     const URL_BACKEND = "/v2/api/role-all";
@@ -94,7 +92,6 @@ const fetchAllCartAPI = () => {
     const URL_BACKEND = "/v2/api/cart";
     return axios.get(URL_BACKEND);
 }
-
 
 const addToCartAPI = (productId, quantity = 1) => {
     const URL_BACKEND = "/v2/api/cart/add";
@@ -131,7 +128,6 @@ const createProductAPI = (name, description, price, stock, categoryId, image) =>
     return axios.post(URL_BACKEND, data);
 };
 
-
 const updateProductAPI = (id, name, description, price, stock, categoryId, image) => {
     const URL_BACKEND = "/v2/api/update-product";
     const data = {
@@ -147,7 +143,8 @@ const updateProductAPI = (id, name, description, price, stock, categoryId, image
 }
 
 const deleteProductAPI = (id) => {
-    return axios.delete(`/v2/api/delete-product/${id}`);
+    const URL_BACKEND = `/v2/api/delete-product/${id}`;
+    return axios.delete(URL_BACKEND);
 }
 
 const fetchAllCategoryAPI = () => {
@@ -164,6 +161,28 @@ const fetchAllProductsByCategoryAPI = (categoryId) => {
     const URL_BACKEND = `/v2/api/product/category/${categoryId}`;
     return axios.get(URL_BACKEND);
 }
+
+const fetchOrdersAPI = () => {
+    const URL_BACKEND = "/v2/api/orders";
+    return axios.get(URL_BACKEND);
+}
+
+export const updateOrderStatusAPI = async (orderId, status) => {
+    try {
+        const response = await axios.put(
+            `/v2/api/order/${orderId}/status`,
+            { status },
+            {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`
+                }
+            }
+        );
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
 
 export {
     createUserAPI,
@@ -187,4 +206,5 @@ export {
     fetchAllCategoryAPI,
     searchProductsAPI,
     fetchAllProductsByCategoryAPI,
+    fetchOrdersAPI,
 }

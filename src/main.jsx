@@ -7,7 +7,7 @@ import {
 import LoginPage from './pages/Admin/login.jsx';
 import RegisterPage from './pages/Admin/register.jsx';
 import UserPage from './pages/Admin/user.jsx';
-import ProductPage from './pages/Admin/product.jsx';
+import ProductManagement from './pages/Admin/ProductManagement.jsx';
 import './styles/global.css';
 import ErrorPage from './pages/error.jsx';
 import { AuthWrapper } from './components/context/auth.context.jsx';
@@ -36,10 +36,10 @@ const router = createBrowserRouter([
           </AdminRoute>
       },
       {
-        path: "/products",
+        path: "/admin/products",
         element:
           <AdminRoute>
-            <ProductPage />
+            <ProductManagement />
           </AdminRoute>
       },
       {

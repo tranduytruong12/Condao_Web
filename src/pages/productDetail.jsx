@@ -70,7 +70,6 @@ const ProductDetail = () => {
                     </div>
                     <div className="product-detail-actions">
                         <button className="btn-add-to-cart" onClick={handleAddToCart}>Add to Cart</button>
-                        <button className="btn-buy-now">Buy Now</button>
                     </div>
                 </div>
             </div>

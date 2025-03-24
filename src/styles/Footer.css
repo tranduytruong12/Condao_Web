@@ -1,0 +1,81 @@
+.footer {
+    background-color: white;
+    padding: 24px;
+    text-align: center;
+    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    transition: all 0.3s ease;
+}
+
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+}
+
+.footer p {
+    margin: 0;
+    color: #666;
+}
+
+.footer-links {
+    display: flex;
+    gap: 24px;
+}
+
+.footer-links a {
+    color: #666;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.footer-links a:hover {
+    color: #1890ff;
+}
+
+/* Add margin to main content to prevent footer overlap */
+main {
+    margin-bottom: 80px; /* Adjust this value based on your footer height */
+}
+
+/* For pages with tables or other content that needs more space */
+.ant-table-wrapper,
+.product-management,
+.user-management {
+    margin-bottom: 100px;
+}
+
+@media (max-width: 768px) {
+    .footer {
+        padding: 16px;
+    }
+
+    .footer-content {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .footer-links {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 16px;
+    }
+
+    /* Adjust margin for mobile */
+    main {
+        margin-bottom: 120px; /* Increased margin for mobile footer */
+    }
+
+    .ant-table-wrapper,
+    .product-management,
+    .user-management {
+        margin-bottom: 140px;
+    }
+} 
