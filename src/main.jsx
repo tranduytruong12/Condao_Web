@@ -13,10 +13,11 @@ import ErrorPage from './pages/error.jsx';
 import { AuthWrapper } from './components/context/auth.context.jsx';
 import HomePage from './pages/home.jsx';
 import ProductDetail from './pages/productDetail.jsx';
-import CartPage from './pages/CartPage';
+import CartPage from './pages/CartPage.jsx';
 import PrivateRoute from './pages/private.rout.jsx';
 import AdminRoute from './components/routes/AdminRoute.jsx';
 import SearchResults from './pages/SearchResults.jsx';
+import CheckoutPage from './pages/CheckoutPage.jsx';
 
 const router = createBrowserRouter([
   {
@@ -56,6 +57,13 @@ const router = createBrowserRouter([
       {
         path: "/search",
         element: <SearchResults />
+      },
+      {
+        path: "/checkout",
+        element:
+          <PrivateRoute>
+            <CheckoutPage />
+          </PrivateRoute>
       }
     ]
   },

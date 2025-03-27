@@ -184,6 +184,26 @@ export const updateOrderStatusAPI = async (orderId, status) => {
     }
 };
 
+// Hàm thanh toán đơn hàng
+const checkoutOrderAPI = (data) => {
+    const URL_BACKEND = "/v2/api/order/checkout";
+    return axios.post(URL_BACKEND, data);
+};
+
+// API tạo mã VietQR
+const generateVietQRAPI = (orderId, amount) => {
+    const URL_BACKEND = "/v2/api/payment/vietqr";
+    return axios.post(URL_BACKEND, {
+        orderId: orderId,
+        amount: amount
+    });
+};
+
+const checkPaymentStatusAPI = (orderId) => {
+    const URL_BACKEND = `/v2/api/payment/${orderId}/status`;
+    return axios.get(URL_BACKEND);
+};
+
 export {
     createUserAPI,
     updateUserAPI,
@@ -207,4 +227,7 @@ export {
     searchProductsAPI,
     fetchAllProductsByCategoryAPI,
     fetchOrdersAPI,
+    checkoutOrderAPI,
+    generateVietQRAPI,
+    checkPaymentStatusAPI,
 }
