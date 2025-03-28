@@ -33,8 +33,9 @@ import {
     updateCartController
 } from "../Controller/cartController.js";
 
-import { checkoutOrderController, getOrderDetailsController } from '../Controller/orderController.js';
+import { checkoutOrderController, getOrderDetailsController, getAllOrdersController, getAllPaymentsController, updatePaymentStatusController, deletePaymentController } from '../Controller/orderController.js';
 import { generateVietQRController, checkPaymentStatusController } from '../Controller/paymmentController.js';
+import { updateOrderStatusController } from '../Controller/orderController.js';
 
 routerAPI.post('/login', Login);
 routerAPI.post('/register', register);
@@ -78,10 +79,15 @@ routerAPI.put('/cart/update/:cartItemId', verifyToken, updateCartController);
 // API payment routes
 routerAPI.post('/payment/vietqr', verifyToken, generateVietQRController);
 routerAPI.get('/payment/:orderId/status', verifyToken, checkPaymentStatusController);
+routerAPI.get('/payments', verifyToken, checkRole(['Admin']), getAllPaymentsController);
+routerAPI.put('/payment/:paymentId/status', verifyToken, checkRole(['Admin']), updatePaymentStatusController);
+routerAPI.delete('/payment/:paymentId', verifyToken, checkRole(['Admin']), deletePaymentController);
 
 // Api cho order
 routerAPI.post('/order/checkout', verifyToken, checkoutOrderController);
 routerAPI.get('/order/:orderId', verifyToken, getOrderDetailsController);
+routerAPI.get('/orders', verifyToken, checkRole(['Admin']), getAllOrdersController);
+routerAPI.put('/order/:orderId/status', verifyToken, checkRole(['Admin']), updateOrderStatusController);
 
 
 module.exports = routerAPI;

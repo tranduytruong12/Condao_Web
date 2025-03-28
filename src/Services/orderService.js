@@ -93,3 +93,101 @@ export const getOrderDetails = async (orderId) => {
         throw error;
     }
 };
+
+export const getAllOrders = async () => {
+    try {
+        console.log('Fetching all orders...'); // Debug log
+        const orders = await db.Order.findAll({
+            include: [
+                {
+                    model: db.User,
+                    attributes: ['username', 'email']
+                },
+                {
+                    model: db.OrderItem,
+                    include: [{
+                        model: db.Product,
+                        attributes: ['name', 'image']
+                    }]
+                },
+                {
+                    model: db.Address,
+                    attributes: ['recipientName', 'phoneNumber', 'addressLine1', 'addressLine2', 'city', 'state']
+                },
+                {
+                    model: db.Payment,
+                    attributes: ['paymentMethod', 'status', 'paymentDate', 'amount'],
+                    required: false // Thêm required: false để lấy cả đơn hàng chưa có payment
+                }
+            ],
+            order: [['createdAt', 'DESC']]
+        });
+        console.log('Found orders:', orders.length); // Debug log
+        return orders;
+    } catch (error) {
+        console.error('Error in getAllOrders:', error); // Debug log
+        throw error;
+    }
+};
+
+export const getAllPayments = async () => {
+    try {
+        console.log('Fetching all payments...'); // Debug log
+        const payments = await db.Payment.findAll({
+            include: [
+                {
+                    model: db.User,
+                    attributes: ['username', 'email']
+                },
+                {
+                    model: db.Address,
+                    attributes: ['recipientName', 'phoneNumber', 'addressLine1', 'addressLine2', 'city', 'state']
+                },
+                {
+                    model: db.Order,
+                    include: [{
+                        model: db.OrderItem,
+                        include: [{
+                            model: db.Product,
+                            attributes: ['name', 'image', 'price']
+                        }]
+                    }]
+                }
+            ],
+            order: [['createdAt', 'DESC']]
+        });
+        console.log('Found payments:', payments.length); // Debug log
+        return payments;
+    } catch (error) {
+        console.error('Error in getAllPayments:', error); // Debug log
+        throw error;
+    }
+};
+
+export const updatePaymentStatus = async (paymentId, status) => {
+    try {
+        const payment = await db.Payment.findByPk(paymentId);
+        if (!payment) {
+            throw new Error('Không tìm thấy thanh toán');
+        }
+
+        await payment.update({ status });
+        return payment;
+    } catch (error) {
+        throw error;
+    }
+};
+
+export const deletePayment = async (paymentId) => {
+    try {
+        const payment = await db.Payment.findByPk(paymentId);
+        if (!payment) {
+            throw new Error('Không tìm thấy thanh toán');
+        }
+
+        await payment.destroy();
+        return true;
+    } catch (error) {
+        throw error;
+    }
+};

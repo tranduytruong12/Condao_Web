@@ -6,7 +6,7 @@ import apiRoutes from './Routes/api.js';
 import fileUpload from 'express-fileupload';
 
 const app = express();
-const port = process.env.PORT || 8888;
+const port = process.env.PORT || 8082;
 const hostname = process.env.HOST_NAME;
 
 

@@ -4,6 +4,12 @@ import { generateVietQRCode } from './VietQRservice.js';
 
 export const createVietQRUrl = async ({ amount, orderId }) => {
     try {
+        // Tạo QR code
+        const encodedAccountName = encodeURIComponent(vietQRConfig.accountName);
+        const encodedDescription = encodeURIComponent(`thanh toan don hang ${orderId}`);
+        
+        const qrUrl = `https://img.vietqr.io/image/${vietQRConfig.bankId}-${vietQRConfig.accountNo}-${vietQRConfig.template}.png?amount=${amount}&addInfo=${encodedDescription}&accountName=${encodedAccountName}`;
+
         // Lưu thông tin thanh toán
         await db.Payment.create({
             orderId: orderId,
@@ -13,7 +19,7 @@ export const createVietQRUrl = async ({ amount, orderId }) => {
         });
 
         return {
-            qrUrl: vietQrUrl
+            qrUrl: qrUrl
         };
     } catch (error) {
         throw error;
