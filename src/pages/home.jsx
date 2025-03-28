@@ -221,6 +221,10 @@ const HomePage = () => {
                                                 alt={product.name}
                                                 className="product-image"
                                                 onClick={() => handleViewDetails(product)}
+                                                onError={(e) => {
+                                                    e.target.onerror = null; // Prevent infinite loop
+                                                    e.target.src = 'https://via.placeholder.com/300x300?text=No+Image';
+                                                }}
                                             />
                                             {product.stock <= 0 && (
                                                 <div className="out-of-stock-overlay">

@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Menu, Badge, Dropdown, Input, Button } from 'antd'; // Import Input and Button from antd
-import { UsergroupAddOutlined, HomeOutlined, AuditOutlined, LoginOutlined, AliwangwangOutlined, ShoppingCartOutlined, SearchOutlined } from '@ant-design/icons'; // Import SearchOutlined
+import { UsergroupAddOutlined, HomeOutlined, AuditOutlined, LoginOutlined, AliwangwangOutlined, ShoppingCartOutlined, SearchOutlined, PayCircleOutlined } from '@ant-design/icons'; // Import SearchOutlined
 import { useContext, useState, useEffect } from 'react';
 import { AuthContext } from '../../context/auth.context';
 import { fetchAllCartAPI } from '../../../services/api.service';
@@ -34,16 +34,27 @@ const Header = ({ current, setCurrent }) => {
                 }));
                 setCartItems(items);
                 setCartItemCount(res.data.CartItems.length);
+            } else {
+                // Nếu không có sản phẩm trong giỏ hàng, reset state
+                setCartItems([]);
+                setCartItemCount(0);
             }
         } catch (error) {
             console.error("Failed to fetch cart items", error);
+            // Nếu có lỗi, reset state
+            setCartItems([]);
+            setCartItemCount(0);
         }
     };
 
     useEffect(() => {
-        window.addEventListener('cartUpdated', fetchCartItems);
+        const handleCartUpdate = () => {
+            fetchCartItems();
+        };
+        
+        window.addEventListener('cartUpdated', handleCartUpdate);
         return () => {
-            window.removeEventListener('cartUpdated', fetchCartItems);
+            window.removeEventListener('cartUpdated', handleCartUpdate);
         };
     }, []);
 
@@ -72,33 +83,40 @@ const Header = ({ current, setCurrent }) => {
 
     const isAdmin = user?.roles?.includes('Admin');
 
-    const cartMenu = (
-        <div style={{ padding: '12px', width: '300px' }}>
-            {cartItems.length > 0 ? (
-                <>
-                    {cartItems.map(item => (
-                        <div key={item.id} style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-                            <img src={item.image} alt={item.title} style={{ width: '40px', height: '40px', objectFit: 'cover', marginRight: '8px' }} />
-                            <div style={{ flex: 1 }}>
-                                <div style={{ fontWeight: 'bold' }}>{item.title}</div>
-                                <div style={{ color: '#666' }}>
-                                    {item.price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
+    const cartMenu = {
+        items: [
+            {
+                key: 'cart-content',
+                label: (
+                    <div style={{ padding: '12px', width: '300px' }}>
+                        {cartItems.length > 0 ? (
+                            <>
+                                {cartItems.map(item => (
+                                    <div key={item.id} style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                                        <img src={item.image} alt={item.title} style={{ width: '40px', height: '40px', objectFit: 'cover', marginRight: '8px' }} />
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ fontWeight: 'bold' }}>{item.title}</div>
+                                            <div style={{ color: '#666' }}>
+                                                {item.price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
+                                            </div>
+                                        </div>
+                                        <div style={{ marginLeft: '8px' }}>x{item.quantity}</div>
+                                    </div>
+                                ))}
+                                <div style={{ textAlign: 'right', marginTop: '8px', borderTop: '1px solid #eee', paddingTop: '8px' }}>
+                                    <Link to="/cart">
+                                        <Button type="primary">View Cart</Button>
+                                    </Link>
                                 </div>
-                            </div>
-                            <div style={{ marginLeft: '8px' }}>x{item.quantity}</div>
-                        </div>
-                    ))}
-                    <div style={{ textAlign: 'right', marginTop: '8px', borderTop: '1px solid #eee', paddingTop: '8px' }}>
-                        <Link to="/cart">
-                            <Button type="primary">View Cart</Button>
-                        </Link>
+                            </>
+                        ) : (
+                            <div style={{ textAlign: 'center' }}>Your cart is empty</div>
+                        )}
                     </div>
-                </>
-            ) : (
-                <div style={{ textAlign: 'center' }}>Your cart is empty</div>
-            )}
-        </div>
-    );
+                )
+            }
+        ]
+    };
 
     const items = [
         {
@@ -108,7 +126,7 @@ const Header = ({ current, setCurrent }) => {
         },
         ...(isAdmin ? [
             {
-                label: <Link to={"/users"}>Users</Link>,
+                label: <Link to={"/admin/users"}>Users</Link>,
                 key: 'users',
                 icon: <UsergroupAddOutlined />
             },
@@ -117,10 +135,15 @@ const Header = ({ current, setCurrent }) => {
                 key: 'products',
                 icon: <AuditOutlined />,
             },
+            {
+                label: <Link to={"/admin/payments"}>Quản lý thanh toán</Link>,
+                key: 'payments',
+                icon: <PayCircleOutlined />,
+            },
         ] : []),
         {
             label: (
-                <Dropdown overlay={cartMenu} trigger={['hover']}>
+                <Dropdown menu={cartMenu} trigger={['hover']}>
                     <Link to={"/cart"}>
                         <span className="cart-icon">Giỏ hàng</span>
                     </Link>
@@ -149,6 +172,22 @@ const Header = ({ current, setCurrent }) => {
             ],
         }] : []),
     ];
+
+    useEffect(() => {
+        // Set active menu item based on current path
+        const path = location.pathname;
+        if (path === '/') {
+            setCurrent('home');
+        } else if (path === '/cart') {
+            setCurrent('cart');
+        } else if (path === '/admin/users') {
+            setCurrent('users');
+        } else if (path === '/admin/products') {
+            setCurrent('products');
+        } else if (path === '/admin/payments') {
+            setCurrent('payments');
+        }
+    }, [location]);
 
     return (
         <div className="header">

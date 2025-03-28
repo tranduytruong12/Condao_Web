@@ -185,9 +185,13 @@ export const updateOrderStatusAPI = async (orderId, status) => {
 };
 
 // Hàm thanh toán đơn hàng
-const checkoutOrderAPI = (data) => {
+const checkoutOrderAPI = (addressData, paymentMethod) => {
     const URL_BACKEND = "/v2/api/order/checkout";
-    return axios.post(URL_BACKEND, data);
+    // Đảm bảo nếu paymentMethod không được cung cấp trong addressData
+    if (!addressData.paymentMethod && paymentMethod) {
+        addressData.paymentMethod = paymentMethod;
+    }
+    return axios.post(URL_BACKEND, addressData);
 };
 
 // API tạo mã VietQR
@@ -202,6 +206,38 @@ const generateVietQRAPI = (orderId, amount) => {
 const checkPaymentStatusAPI = (orderId) => {
     const URL_BACKEND = `/v2/api/payment/${orderId}/status`;
     return axios.get(URL_BACKEND);
+};
+
+const clearCartAPI = () => {
+    const URL_BACKEND = "/v2/api/cart/clear";
+    return axios.delete(URL_BACKEND);
+};
+
+const fetchPaymentsAPI = () => {
+    const URL_BACKEND = "/v2/api/payments";
+    return axios.get(URL_BACKEND);
+};
+
+const updatePaymentStatusAPI = async (paymentId, status) => {
+    try {
+        const response = await axios.put(
+            `/v2/api/payment/${paymentId}/status`,
+            { status },
+            {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`
+                }
+            }
+        );
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
+const deletePaymentAPI = (paymentId) => {
+    const URL_BACKEND = `/v2/api/payment/${paymentId}`;
+    return axios.delete(URL_BACKEND);
 };
 
 export {
@@ -230,4 +266,8 @@ export {
     checkoutOrderAPI,
     generateVietQRAPI,
     checkPaymentStatusAPI,
+    clearCartAPI,
+    fetchPaymentsAPI,
+    updatePaymentStatusAPI,
+    deletePaymentAPI,
 }

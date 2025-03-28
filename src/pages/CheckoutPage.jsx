@@ -1,7 +1,8 @@
 import { Form, Input, Button, notification, Checkbox, Modal, Spin } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { checkoutOrderAPI, fetchAllCartAPI, generateVietQRAPI } from '../services/api.service';
-import { useState, useEffect } from 'react';
+import { checkoutOrderAPI, fetchAllCartAPI, generateVietQRAPI, getAccountAPI, updateOrderStatusAPI, clearCartAPI } from '../services/api.service';
+import { useState, useEffect, useContext } from 'react';
+import { AuthContext } from '../components/context/auth.context';
 import '../styles/CartPage.css';
 
 const CheckoutPage = () => {
@@ -12,6 +13,7 @@ const CheckoutPage = () => {
     const [showQRModal, setShowQRModal] = useState(false);
     const [cartTotal, setCartTotal] = useState(0);
     const [currentOrder, setCurrentOrder] = useState(null);
+    const { setUser } = useContext(AuthContext);
 
     // Fetch cart total when component mounts
     useEffect(() => {
@@ -38,55 +40,120 @@ const CheckoutPage = () => {
     const handlePayment = async (values) => {
         setLoading(true);
         try {
+            const paymentMethod = values.paymentMethods[0];
             const addressData = {
-                paymentMethod: values.paymentMethods[0],
                 recipientName: values.recipientName,
                 phoneNumber: values.phone,
                 addressLine1: values.address,
                 city: values.city,
-                state: values.state,
+                state: values.state || '',
+                paymentMethod: paymentMethod
             };
     
-            const paymentMethod = values.paymentMethods[0];
-    
-            // 1. First create the order
-            const orderResponse = await checkoutOrderAPI(addressData, paymentMethod);
-            console.log("Order Response:", orderResponse); // Debug log
+            if (paymentMethod === 'vietqr') {
+                // 1. Generate VietQR code first
+                const vietQRResponse = await generateVietQRAPI(cartTotal);
+                console.log("VietQR Response DETAILS:", JSON.stringify(vietQRResponse));
 
-            if (orderResponse.data && orderResponse.data.qrPayment.qrUrl) {
-                const order = orderResponse.data.qrPayment.qrUrl;
-
-                if (paymentMethod === 'vietqr') {
-                    // 2. Generate VietQR code for the order
-                    const vietQRResponse = await generateVietQRAPI(order.id, order.totalAmount);
-                    console.log("VietQR Response:", vietQRResponse); // Debug log
-
-                    if (vietQRResponse.data) {
-                        setQrCode(vietQRResponse.data.qrUrl);
-                        setShowQRModal(true);
-                        setCurrentOrder(order);
+                if (vietQRResponse && vietQRResponse.data) {
+                    let qrUrl = '';
+                    
+                    if (vietQRResponse.data.data && vietQRResponse.data.data.qrUrl) {
+                        qrUrl = vietQRResponse.data.data.qrUrl;
+                    } else if (vietQRResponse.data.qrUrl) {
+                        qrUrl = vietQRResponse.data.qrUrl;
                     } else {
-                        throw new Error("QR code generation failed");
+                        console.error("Không tìm thấy URL QR trong response:", vietQRResponse);
+                        throw new Error("Không tìm thấy URL QR trong response");
                     }
+                    
+                    console.log("QR URL extracted:", qrUrl);
+                    setQrCode(qrUrl);
+                    setShowQRModal(true);
                 } else {
-                    // Handle COD payment
+                    throw new Error("QR code generation failed");
+                }
+            } else {
+                // Handle COD payment
+                const orderResponse = await checkoutOrderAPI(addressData);
+                if (orderResponse && orderResponse.data) {
+                    // Xóa giỏ hàng sau khi thanh toán thành công
+                    await clearCartAPI();
+
                     notification.success({
                         message: "Đặt hàng thành công",
                         description: "Đơn hàng của bạn đã được xác nhận"
                     });
-                    navigate('/orders');
+                    // Cập nhật trạng thái user để header cập nhật giỏ hàng
+                    const userResponse = await getAccountAPI();
+                    if (userResponse && userResponse.data) {
+                        setUser(userResponse.data.user);
+                    }
+                    // Dispatch event để cập nhật giỏ hàng
+                    window.dispatchEvent(new Event('cartUpdated'));
+                    navigate('/');
+                } else {
+                    throw new Error("Invalid order response");
                 }
-            } else {
-                throw new Error("Invalid order response");
             }
         } catch (error) {
-            console.error("Payment Error:", error); // Debug log
+            console.error("Payment Error:", error);
             notification.error({
                 message: "Lỗi",
                 description: error.message || "Đã có lỗi xảy ra khi thanh toán"
             });
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleQRModalClose = async () => {
+        setShowQRModal(false);
+        try {
+            // Tạo đơn hàng khi người dùng xác nhận đã thanh toán
+            const formValues = form.getFieldsValue();
+            const addressData = {
+                recipientName: formValues.recipientName,
+                phoneNumber: formValues.phone,
+                addressLine1: formValues.address,
+                city: formValues.city,
+                state: formValues.state || '',
+                paymentMethod: 'vietqr'
+            };
+
+            const orderResponse = await checkoutOrderAPI(addressData);
+
+            if (orderResponse && orderResponse.data) {
+                // Cập nhật trạng thái đơn hàng thành đã thanh toán
+                const orderId = orderResponse.data.orderId || orderResponse.data.data.orderId;
+                if (orderId) {
+                    await updateOrderStatusAPI(orderId, 'paid');
+                }
+
+                // Xóa giỏ hàng sau khi thanh toán thành công
+                await clearCartAPI();
+
+                notification.success({
+                    message: "Đặt hàng thành công",
+                    description: "Đơn hàng của bạn đã được xác nhận"
+                });
+                // Cập nhật trạng thái user để header cập nhật giỏ hàng
+                const userResponse = await getAccountAPI();
+                if (userResponse && userResponse.data) {
+                    setUser(userResponse.data.user);
+                }
+                // Dispatch event để cập nhật giỏ hàng
+                window.dispatchEvent(new Event('cartUpdated'));
+                navigate('/');
+            } else {
+                throw new Error("Invalid order response");
+            }
+        } catch (error) {
+            console.error("Order Creation Error:", error);
+            notification.error({
+                message: "Lỗi",
+                description: "Đã có lỗi xảy ra khi tạo đơn hàng"
+            });
         }
     };
 
@@ -172,21 +239,15 @@ const CheckoutPage = () => {
                 </Form.Item>
             </Form>
 
-                        <Modal
+            <Modal
                 title="Quét mã QR để thanh toán"
                 open={showQRModal}
-                onCancel={() => {
-                    setShowQRModal(false);
-                    navigate('/');
-                }}
+                onCancel={handleQRModalClose}
                 width={500}
                 footer={[
                     <Button 
                         key="back" 
-                        onClick={() => {
-                            setShowQRModal(false);
-                            navigate('/');
-                        }}
+                        onClick={handleQRModalClose}
                     >
                         Hoàn tất
                     </Button>

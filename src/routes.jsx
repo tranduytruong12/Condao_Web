@@ -11,6 +11,7 @@ import UserManagement from './pages/Admin/UserManagement';
 import ProductManagement from './pages/Admin/ProductManagement';
 import CategoryManagement from './pages/Admin/CategoryManagement';
 import RoleManagement from './pages/Admin/RoleManagement';
+import PaymentManagement from './pages/Admin/PaymentManagement';
 
 export const router = createBrowserRouter([
     {
@@ -62,6 +63,10 @@ export const router = createBrowserRouter([
             {
                 path: 'roles',
                 element: <RoleManagement />
+            },
+            {
+                path: 'payments',
+                element: <PaymentManagement />
             }
         ]
     }

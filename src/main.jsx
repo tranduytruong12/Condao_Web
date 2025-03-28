@@ -8,6 +8,7 @@ import LoginPage from './pages/Admin/login.jsx';
 import RegisterPage from './pages/Admin/register.jsx';
 import UserPage from './pages/Admin/user.jsx';
 import ProductManagement from './pages/Admin/ProductManagement.jsx';
+import OrderManagement from './pages/Admin/OrderManagement.jsx';
 import './styles/global.css';
 import ErrorPage from './pages/error.jsx';
 import { AuthWrapper } from './components/context/auth.context.jsx';
@@ -30,7 +31,7 @@ const router = createBrowserRouter([
         element: <HomePage />
       },
       {
-        path: "/users",
+        path: "/admin/users",
         element:
           <AdminRoute>
             <UserPage />
@@ -41,6 +42,13 @@ const router = createBrowserRouter([
         element:
           <AdminRoute>
             <ProductManagement />
+          </AdminRoute>
+      },
+      {
+        path: "/admin/payments",
+        element:
+          <AdminRoute>
+            <OrderManagement />
           </AdminRoute>
       },
       {

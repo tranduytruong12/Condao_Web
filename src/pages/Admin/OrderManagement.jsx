@@ -1,54 +1,71 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Modal, message, Tag, List, Avatar, Typography, Descriptions, Space, Divider, Row, Col } from 'antd';
-import { fetchOrdersAPI, updateOrderStatusAPI } from '../../services/api.service';
+import { Table, Button, Modal, message, Tag, Typography, Descriptions, Space, Divider, Row, Col, Dropdown, Popconfirm } from 'antd';
+import { DeleteOutlined } from '@ant-design/icons';
+import { fetchPaymentsAPI, updatePaymentStatusAPI, deletePaymentAPI } from '../../services/api.service';
 
 const { Text, Title } = Typography;
 
-const OrderManagement = () => {
-    const [orders, setOrders] = useState([]);
+const PaymentManagement = () => {
+    const [payments, setPayments] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [selectedOrder, setSelectedOrder] = useState(null);
+    const [selectedPayment, setSelectedPayment] = useState(null);
     const [isModalVisible, setIsModalVisible] = useState(false);
 
-    const fetchOrders = async () => {
+    const fetchPayments = async () => {
         try {
             setLoading(true);
-            const response = await fetchOrdersAPI();
-            setOrders(response.data.data);
-            console.log('Danh sách đơn hàng:', response.data.data);
+            const response = await fetchPaymentsAPI();
+            console.log('API Response:', response);
+            if (response && response.data) {
+                console.log('Payments data:', response.data);
+                setPayments(response.data);
+            } else {
+                console.log('Invalid response format:', response);
+                message.error('Không thể tải danh sách thanh toán');
+                setPayments([]);
+            }
         } catch (error) {
-            message.error('Không thể tải danh sách đơn hàng');
-            console.error('Fetch orders error:', error);
+            console.error('Error loading payments:', error);
+            message.error('Có lỗi xảy ra khi tải danh sách thanh toán');
+            setPayments([]);
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchOrders();
+        fetchPayments();
     }, []);
 
-    const handleConfirmOrder = async (orderId) => {
+    const handleUpdateStatus = async (paymentId, newStatus) => {
         try {
-            message.loading('Đang cập nhật đơn hàng...', 1);
-            await updateOrderStatusAPI(orderId, 'confirmed');
-            message.success('Đã xác nhận đơn hàng thành công');
-            fetchOrders(); // Refresh danh sách đơn hàng
+            message.loading('Đang cập nhật trạng thái thanh toán...', 1);
+            const res = await updatePaymentStatusAPI(paymentId, newStatus);
+            if (res && res.data) {
+                message.success(`Đã cập nhật trạng thái thanh toán thành ${getStatusText(newStatus)}`);
+                fetchPayments(); // Refresh danh sách thanh toán
+            } else {
+                message.error('Không thể cập nhật trạng thái thanh toán');
+            }
         } catch (error) {
-            message.error('Không thể xác nhận đơn hàng: ' + (error.response?.data?.message || error.message));
-            console.error('Confirm order error:', error);
+            message.error('Không thể cập nhật trạng thái thanh toán: ' + (error.response?.data?.message || error.message));
+            console.error('Update status error:', error);
         }
     };
 
-    const handleCancelOrder = async (orderId) => {
+    const handleDeletePayment = async (paymentId) => {
         try {
-            message.loading('Đang cập nhật đơn hàng...', 1);
-            await updateOrderStatusAPI(orderId, 'cancelled');
-            message.success('Đã hủy đơn hàng thành công');
-            fetchOrders(); // Refresh danh sách đơn hàng
+            message.loading('Đang xóa thanh toán...', 1);
+            const res = await deletePaymentAPI(paymentId);
+            if (res && res.data) {
+                message.success('Đã xóa thanh toán thành công');
+                fetchPayments(); // Refresh danh sách thanh toán
+            } else {
+                message.error('Không thể xóa thanh toán');
+            }
         } catch (error) {
-            message.error('Không thể hủy đơn hàng');
-            console.error('Cancel order error:', error);
+            message.error('Không thể xóa thanh toán: ' + (error.response?.data?.message || error.message));
+            console.error('Delete payment error:', error);
         }
     };
 
@@ -56,12 +73,12 @@ const OrderManagement = () => {
         switch (status) {
             case 'pending':
                 return 'gold';
-            case 'confirmed':
+            case 'processing':
+                return 'orange';
+            case 'completed':
                 return 'green';
-            case 'cancelled':
+            case 'failed':
                 return 'red';
-            case 'delivered':
-                return 'blue';
             default:
                 return 'default';
         }
@@ -71,20 +88,52 @@ const OrderManagement = () => {
         switch (status) {
             case 'pending':
                 return 'ĐANG CHỜ';
-            case 'confirmed':
-                return 'ĐÃ XÁC NHẬN';
-            case 'cancelled':
-                return 'ĐÃ HỦY';
-            case 'delivered':
-                return 'ĐÃ GIAO';
+            case 'processing':
+                return 'ĐANG XỬ LÝ';
+            case 'completed':
+                return 'ĐÃ HOÀN THÀNH';
+            case 'failed':
+                return 'THẤT BẠI';
             default:
                 return status.toUpperCase();
         }
     };
 
+    const getStatusMenu = (paymentId) => ({
+        items: [
+            {
+                key: 'processing',
+                label: 'Chuyển sang xử lý',
+                onClick: () => handleUpdateStatus(paymentId, 'processing')
+            },
+            {
+                key: 'completed',
+                label: 'Đánh dấu hoàn thành',
+                onClick: () => handleUpdateStatus(paymentId, 'completed')
+            },
+            {
+                key: 'failed',
+                label: 'Đánh dấu thất bại',
+                danger: true,
+                onClick: () => handleUpdateStatus(paymentId, 'failed')
+            }
+        ]
+    });
+
+    const getPaymentMethodText = (method) => {
+        switch (method) {
+            case 'cod':
+                return 'Thanh toán khi nhận hàng (COD)';
+            case 'vietqr':
+                return 'Thanh toán qua QR Code';
+            default:
+                return method?.toUpperCase() || 'Không có thông tin';
+        }
+    };
+
     const columns = [
         {
-            title: 'Mã đơn hàng',
+            title: 'Mã thanh toán',
             dataIndex: 'id',
             key: 'id',
             width: 250,
@@ -94,23 +143,29 @@ const OrderManagement = () => {
             title: 'Khách hàng',
             dataIndex: 'User',
             key: 'user',
-            render: (user) => user?.name || 'Không có thông tin',
+            render: (user) => user?.username || 'Không có thông tin',
         },
         {
-            title: 'Ngày đặt',
+            title: 'Ngày tạo',
             dataIndex: 'createdAt',
             key: 'createdAt',
             render: (text) => new Date(text).toLocaleString('vi-VN'),
         },
         {
-            title: 'Tổng tiền',
-            dataIndex: 'totalAmount',
-            key: 'totalAmount',
+            title: 'Số tiền',
+            dataIndex: 'amount',
+            key: 'amount',
             render: (amount) => new Intl.NumberFormat('vi-VN', {
                 style: 'currency',
                 currency: 'VND'
             }).format(amount),
-            sorter: (a, b) => a.totalAmount - b.totalAmount,
+            sorter: (a, b) => a.amount - b.amount,
+        },
+        {
+            title: 'Phương thức thanh toán',
+            dataIndex: 'paymentMethod',
+            key: 'paymentMethod',
+            render: (method) => getPaymentMethodText(method),
         },
         {
             title: 'Trạng thái',
@@ -123,9 +178,9 @@ const OrderManagement = () => {
             ),
             filters: [
                 { text: 'Đang chờ', value: 'pending' },
-                { text: 'Đã xác nhận', value: 'confirmed' },
-                { text: 'Đã hủy', value: 'cancelled' },
-                { text: 'Đã giao', value: 'delivered' },
+                { text: 'Đang xử lý', value: 'processing' },
+                { text: 'Hoàn thành', value: 'completed' },
+                { text: 'Thất bại', value: 'failed' },
             ],
             onFilter: (value, record) => record.status === value,
         },
@@ -137,42 +192,42 @@ const OrderManagement = () => {
                     <Button
                         type="primary"
                         onClick={() => {
-                            setSelectedOrder(record);
+                            setSelectedPayment(record);
                             setIsModalVisible(true);
                         }}
                     >
                         Chi tiết
                     </Button>
-                    {record.status === 'pending' && (
-                        <>
-                            <Button
-                                type="primary"
-                                onClick={() => handleConfirmOrder(record.id)}
-                            >
-                                Xác nhận
+                    {record.status !== 'completed' && record.status !== 'failed' && (
+                        <Dropdown menu={getStatusMenu(record.id)} placement="bottomRight">
+                            <Button type="primary">
+                                Thao tác
                             </Button>
-                            <Button
-                                type="primary" 
-                                danger
-                                onClick={() => handleCancelOrder(record.id)}
-                            >
-                                Hủy
-                            </Button>
-                        </>
+                        </Dropdown>
                     )}
+                    <Popconfirm
+                        title="Bạn có chắc chắn muốn xóa thanh toán này?"
+                        onConfirm={() => handleDeletePayment(record.id)}
+                        okText="Có"
+                        cancelText="Không"
+                    >
+                        <Button type="primary" danger icon={<DeleteOutlined />}>
+                            Xóa
+                        </Button>
+                    </Popconfirm>
                 </Space>
             ),
         },
     ];
 
     return (
-        <div className="order-management">
+        <div className="payment-management">
             <div style={{ marginBottom: 20 }}>
-                <Title level={2}>Quản lý đơn hàng</Title>
+                <Title level={2}>Quản lý thanh toán</Title>
             </div>
             <Table
                 columns={columns}
-                dataSource={orders}
+                dataSource={payments}
                 rowKey="id"
                 loading={loading}
                 pagination={{ pageSize: 10 }}
@@ -180,10 +235,10 @@ const OrderManagement = () => {
             <Modal
                 title={
                     <div style={{ textAlign: 'center' }}>
-                        <Title level={4}>Chi tiết đơn hàng</Title>
-                        {selectedOrder && (
-                            <Tag color={getStatusColor(selectedOrder.status)} style={{ marginLeft: 8 }}>
-                                {getStatusText(selectedOrder.status)}
+                        <Title level={4}>Chi tiết thanh toán</Title>
+                        {selectedPayment && (
+                            <Tag color={getStatusColor(selectedPayment.status)} style={{ marginLeft: 8 }}>
+                                {getStatusText(selectedPayment.status)}
                             </Tag>
                         )}
                     </div>
@@ -193,78 +248,80 @@ const OrderManagement = () => {
                 footer={null}
                 width={800}
             >
-                {selectedOrder && (
+                {selectedPayment && (
                     <div>
                         <Descriptions bordered column={2}>
-                            <Descriptions.Item label="Mã đơn hàng" span={2}>{selectedOrder.id}</Descriptions.Item>
-                            <Descriptions.Item label="Khách hàng">{selectedOrder.User?.name || 'Không có thông tin'}</Descriptions.Item>
-                            <Descriptions.Item label="Email">{selectedOrder.User?.email || 'Không có thông tin'}</Descriptions.Item>
-                            <Descriptions.Item label="Ngày đặt">{new Date(selectedOrder.createdAt).toLocaleString('vi-VN')}</Descriptions.Item>
-                            <Descriptions.Item label="Tổng tiền">
+                            <Descriptions.Item label="Mã thanh toán" span={2}>{selectedPayment.id}</Descriptions.Item>
+                            <Descriptions.Item label="Khách hàng">{selectedPayment.User?.username || 'Không có thông tin'}</Descriptions.Item>
+                            <Descriptions.Item label="Email">{selectedPayment.User?.email || 'Không có thông tin'}</Descriptions.Item>
+                            <Descriptions.Item label="Ngày tạo">{new Date(selectedPayment.createdAt).toLocaleString('vi-VN')}</Descriptions.Item>
+                            <Descriptions.Item label="Số tiền">
                                 <Text strong>
                                     {new Intl.NumberFormat('vi-VN', {
                                         style: 'currency',
                                         currency: 'VND'
-                                    }).format(selectedOrder.totalAmount)}
+                                    }).format(selectedPayment.amount)}
                                 </Text>
+                            </Descriptions.Item>
+                            <Descriptions.Item label="Phương thức thanh toán">
+                                {getPaymentMethodText(selectedPayment.paymentMethod)}
+                            </Descriptions.Item>
+                            <Descriptions.Item label="Người nhận">{selectedPayment.Address?.recipientName || 'Không có thông tin'}</Descriptions.Item>
+                            <Descriptions.Item label="Số điện thoại">{selectedPayment.Address?.phoneNumber || 'Không có thông tin'}</Descriptions.Item>
+                            <Descriptions.Item label="Địa chỉ" span={2}>
+                                {selectedPayment.Address?.addressLine1 || 'Không có thông tin'}
+                                {selectedPayment.Address?.addressLine2 && `, ${selectedPayment.Address.addressLine2}`}
+                                {selectedPayment.Address?.city && `, ${selectedPayment.Address.city}`}
+                                {selectedPayment.Address?.state && `, ${selectedPayment.Address.state}`}
                             </Descriptions.Item>
                         </Descriptions>
 
-                        <Divider>Danh sách sản phẩm</Divider>
-                        
-                        <List
-                            itemLayout="horizontal"
-                            dataSource={selectedOrder.OrderItems || []}
-                            renderItem={(item) => (
-                                <List.Item>
-                                    <List.Item.Meta
-                                        avatar={<Avatar src={item.Product?.image} shape="square" size={64} />}
-                                        title={item.Product?.name}
-                                        description={
-                                            <Space direction="vertical">
-                                                <Text>Giá: {new Intl.NumberFormat('vi-VN', {
-                                                    style: 'currency',
-                                                    currency: 'VND'
-                                                }).format(item.price)}</Text>
-                                                <Text>Số lượng: {item.quantity}</Text>
-                                            </Space>
-                                        }
-                                    />
-                                    <div>
-                                        <Text strong>
-                                            {new Intl.NumberFormat('vi-VN', {
-                                                style: 'currency',
-                                                currency: 'VND'
-                                            }).format(item.price * item.quantity)}
-                                        </Text>
-                                    </div>
-                                </List.Item>
-                            )}
+                        <Divider orientation="left">Danh sách sản phẩm</Divider>
+                        <Table
+                            dataSource={selectedPayment.Order?.OrderItems || []}
+                            columns={[
+                                {
+                                    title: 'Sản phẩm',
+                                    dataIndex: ['Product', 'name'],
+                                    key: 'name',
+                                },
+                                {
+                                    title: 'Số lượng',
+                                    dataIndex: 'quantity',
+                                    key: 'quantity',
+                                    align: 'center',
+                                },
+                                {
+                                    title: 'Đơn giá',
+                                    dataIndex: ['Product', 'price'],
+                                    key: 'price',
+                                    render: (price) => new Intl.NumberFormat('vi-VN', {
+                                        style: 'currency',
+                                        currency: 'VND'
+                                    }).format(price),
+                                },
+                                {
+                                    title: 'Thành tiền',
+                                    key: 'total',
+                                    render: (_, record) => new Intl.NumberFormat('vi-VN', {
+                                        style: 'currency',
+                                        currency: 'VND'
+                                    }).format(record.quantity * record.Product.price),
+                                }
+                            ]}
+                            pagination={false}
+                            rowKey={(record) => `${record.Product.id}-${record.quantity}`}
                         />
                         
-                        {selectedOrder.status === 'pending' && (
+                        {selectedPayment.status !== 'completed' && selectedPayment.status !== 'failed' && (
                             <Row justify="end" style={{ marginTop: 24 }}>
                                 <Col>
                                     <Space>
-                                        <Button 
-                                            type="primary" 
-                                            danger
-                                            onClick={() => {
-                                                handleCancelOrder(selectedOrder.id);
-                                                setIsModalVisible(false);
-                                            }}
-                                        >
-                                            Hủy đơn hàng
-                                        </Button>
-                                        <Button 
-                                            type="primary"
-                                            onClick={() => {
-                                                handleConfirmOrder(selectedOrder.id);
-                                                setIsModalVisible(false);
-                                            }}
-                                        >
-                                            Xác nhận đơn hàng
-                                        </Button>
+                                        <Dropdown menu={getStatusMenu(selectedPayment.id)} placement="topRight">
+                                            <Button type="primary">
+                                                Cập nhật trạng thái
+                                            </Button>
+                                        </Dropdown>
                                     </Space>
                                 </Col>
                             </Row>
@@ -276,4 +333,4 @@ const OrderManagement = () => {
     );
 };
 
-export default OrderManagement; 
+export default PaymentManagement; 
